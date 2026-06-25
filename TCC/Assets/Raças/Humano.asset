@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2775bd31d53cec24bb03485e6a513f9b, type: 3}
+  m_Name: Humano
+  m_EditorClassIdentifier: 
+  raceName: Humano
+  description: "\xC9 um humano\n"
+  icon: {fileID: 21300000, guid: 28d9b1a7479c24545945ed80ce3d7b05, type: 3}
+  baseBonuses:
+  - attribute: 0
+    bonusValue: 0
+  - attribute: 2
+    bonusValue: 2
+  - attribute: 1
+    bonusValue: 2
+  racialAbilities:
+  - {fileID: 11400000, guid: 81f3b7c033577d149821958c55a6b01c, type: 2}

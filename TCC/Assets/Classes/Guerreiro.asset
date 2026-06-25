@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9671affc22968d647a5c059f74fb8f4a, type: 3}
+  m_Name: Guerreiro
+  m_EditorClassIdentifier: 
+  className: Guerreiro
+  description: "\xC9 um guerreiro"
+  icon: {fileID: 0}
+  baseAttributes:
+  - attribute: 0
+    baseValue: 4
+  - attribute: 1
+    baseValue: 3
+  - attribute: 2
+    baseValue: 0
+  - attribute: 3
+    baseValue: 3
+  - attribute: 4
+    baseValue: 0
+  - attribute: 5
+    baseValue: 0
+  classAbilities:
+  - {fileID: 11400000, guid: 413a61d6cc518fa4f95d5fb770a69f6a, type: 2}
+  allowedRaces:
+  - {fileID: 11400000, guid: 2e65761228a4f544e8c3e7daf8f88d96, type: 2}
+  - {fileID: 11400000, guid: a44f860ed1c6d6442a6a3c9257222474, type: 2}

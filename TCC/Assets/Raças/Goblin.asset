@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2775bd31d53cec24bb03485e6a513f9b, type: 3}
+  m_Name: Goblin
+  m_EditorClassIdentifier: 
+  raceName: Goblin
+  description: "\xC9 um goblin\n"
+  icon: {fileID: 21300000, guid: b40fc24fb074e334d9a023ca1d9a7c0f, type: 3}
+  baseBonuses:
+  - attribute: 4
+    bonusValue: 2
+  - attribute: 1
+    bonusValue: 3
+  - attribute: 5
+    bonusValue: -2
+  racialAbilities:
+  - {fileID: 11400000, guid: f83e7de568dd5e64ba842c525a90221a, type: 2}
