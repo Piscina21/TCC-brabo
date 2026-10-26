@@ -28,10 +28,9 @@ public class CharacterCreatorManager : MonoBehaviour
 
     private void Start()
     {
-        // Inicia na primeira etapa
         ShowPanel(raceSelectionPanel);
         remainingPoints = pointsToDistribute;
-        // Inicializa dicionário de atributos com 0 ou valores padrão
+
         foreach (AttributeType attr in System.Enum.GetValues(typeof(AttributeType)))
         {
             currentBuild.attributes[attr] = 0;
@@ -69,10 +68,19 @@ public class CharacterCreatorManager : MonoBehaviour
             ShowPanel(confirmPanel);
         }
         Debug.Log("Avançando para: " + (classSelectionPanel != null ? classSelectionPanel.name : "null"));
+
+    }
+    public void GoToPreviousStep()
+    {
+        if (classSelectionPanel.activeSelf) ShowPanel(raceSelectionPanel);
+        else if (attributePanel.activeSelf) ShowPanel(classSelectionPanel);
+        else if (appearancePanel.activeSelf) ShowPanel(attributePanel);
+        else if (namePanel.activeSelf) ShowPanel(appearancePanel);
+        else if (confirmPanel.activeSelf) ShowPanel(namePanel);
     }
 
     // ---------- SELEÇÕES ----------
-public void SelectRace(RaceData race)
+    public void SelectRace(RaceData race)
 {
     currentBuild.selectedRace = race;
     onRaceChanged.Invoke(); // ESSENCIAL
@@ -88,9 +96,11 @@ public void SelectRace(RaceData race)
     // Aplicar bônus raciais + classe base aos atributos
     private void ApplyRaceAndClassBonuses()
     {
-        // Limpa atributos
-        foreach (AttributeType attr in currentBuild.attributes.Keys)
+        // Limpa atributos — iterando sobre o enum, não sobre o Dictionary
+        foreach (AttributeType attr in System.Enum.GetValues(typeof(AttributeType)))
+        {
             currentBuild.attributes[attr] = 0;
+        }
 
         // Aplica base da classe
         if (currentBuild.selectedClass != null)
@@ -119,9 +129,11 @@ public void SelectRace(RaceData race)
     }
 
     // Distribuir pontos durante a etapa de atributos
+    public int maxAttributeValue = 20;
+
     public void IncreaseAttribute(AttributeType attr)
     {
-        if (remainingPoints > 0)
+        if (remainingPoints > 0 && currentBuild.attributes[attr] < maxAttributeValue)
         {
             currentBuild.attributes[attr]++;
             remainingPoints--;
@@ -129,11 +141,13 @@ public void SelectRace(RaceData race)
         }
     }
 
+    [Header("Limites de Atributo")]
+    public int minAttributeValue = -5;  // valor mínimo que o jogador pode atingir
+
     public void DecreaseAttribute(AttributeType attr)
     {
-        // Não pode reduzir abaixo do valor base (precisamos guardar o base)
-        // Para simplificar, vamos só impedir de ficar < 0
-        if (currentBuild.attributes[attr] > 0 && remainingPoints < pointsToDistribute)
+        // Só impede de ir abaixo do mínimo configurado
+        if (currentBuild.attributes[attr] > minAttributeValue)
         {
             currentBuild.attributes[attr]--;
             remainingPoints++;
@@ -166,18 +180,15 @@ public void SelectRace(RaceData race)
 
     private void ShowPanel(GameObject panel)
     {
-        // Desativa todos e ativa o escolhido
-        raceSelectionPanel.SetActive(false);
-        classSelectionPanel.SetActive(false);
-        attributePanel.SetActive(false);
-        appearancePanel.SetActive(false);
-        namePanel.SetActive(false);
-        confirmPanel.SetActive(false);
+        if (raceSelectionPanel != null) raceSelectionPanel.SetActive(false);
+        if (classSelectionPanel != null) classSelectionPanel.SetActive(false);
+        if (attributePanel != null) attributePanel.SetActive(false);
+        if (appearancePanel != null) appearancePanel.SetActive(false);
+        if (namePanel != null) namePanel.SetActive(false);
+        if (confirmPanel != null) confirmPanel.SetActive(false);
 
-        if (panel != null)
-            panel.SetActive(true);
+        if (panel != null) panel.SetActive(true);
     }
-
     public RaceData GetSelectedRace()
 {
     // Se você armazena a referência direta no CharacterBuild:
@@ -191,5 +202,22 @@ public ClassData GetSelectedClass()
 {
     return currentBuild.selectedClass;   // exige que currentBuild tenha o campo ClassData
 }
+    // ---------- APARÊNCIA ----------
+    public int GetHairStyleIndex() => currentBuild.hairStyleIndex;
+    public void SetHairStyleIndex(int index)
+    {
+        currentBuild.hairStyleIndex = index;
+        onAppearanceChanged.Invoke();
+    }
+
+    public int GetSkinColorIndex() => currentBuild.skinColorIndex;
+    public void SetSkinColorIndex(int index)
+    {
+        currentBuild.skinColorIndex = index;
+        onAppearanceChanged.Invoke();
+    }
+
+    // ---------- NOME ----------
+    public string GetCharacterName() => currentBuild.characterName;
 
 }

@@ -6,7 +6,7 @@ public class AttributePanel : MonoBehaviour
     [Header("Referências")]
     public CharacterCreatorManager manager;
 
-    // Textos que mostram o valor atual de cada atributo
+    [Header("Textos de Valor dos Atributos")]
     public Text strengthValueText;
     public Text dexterityValueText;
     public Text intelligenceValueText;
@@ -14,16 +14,14 @@ public class AttributePanel : MonoBehaviour
     public Text wisdomValueText;
     public Text charismaValueText;
 
-    // Texto que mostra os pontos restantes
+    [Header("Texto de Pontos Restantes")]
     public Text remainingPointsText;
-
-    // Botões (opcional, se quiser desabilitar quando zerar pontos)
-    // mas para simplicidade, vamos só atualizar os textos
 
     private void OnEnable()
     {
+        // Inscreve no evento para atualizar a UI sempre que um atributo mudar
         manager.onAttributesChanged.AddListener(UpdateUI);
-        UpdateUI();
+        UpdateUI(); // atualiza imediatamente ao abrir o painel
     }
 
     private void OnDisable()
@@ -31,7 +29,8 @@ public class AttributePanel : MonoBehaviour
         manager.onAttributesChanged.RemoveListener(UpdateUI);
     }
 
-    // Métodos chamados pelos botões + e - de cada atributo
+    // --- Métodos chamados pelos botões "+" e "-" de cada atributo ---
+
     public void IncreaseStrength() => manager.IncreaseAttribute(AttributeType.Strength);
     public void DecreaseStrength() => manager.DecreaseAttribute(AttributeType.Strength);
 
@@ -50,15 +49,38 @@ public class AttributePanel : MonoBehaviour
     public void IncreaseCharisma() => manager.IncreaseAttribute(AttributeType.Charisma);
     public void DecreaseCharisma() => manager.DecreaseAttribute(AttributeType.Charisma);
 
+    // --- Atualiza todos os textos com os valores atuais ---
+
     void UpdateUI()
     {
-        strengthValueText.text = manager.GetAttributeValue(AttributeType.Strength).ToString();
-        dexterityValueText.text = manager.GetAttributeValue(AttributeType.Dexterity).ToString();
-        intelligenceValueText.text = manager.GetAttributeValue(AttributeType.Intelligence).ToString();
-        constitutionValueText.text = manager.GetAttributeValue(AttributeType.Constitution).ToString();
-        wisdomValueText.text = manager.GetAttributeValue(AttributeType.Wisdom).ToString();
-        charismaValueText.text = manager.GetAttributeValue(AttributeType.Charisma).ToString();
+        if (manager == null) { Debug.LogError("Manager não atribuído no AttributePanel!"); return; }
 
-        remainingPointsText.text = "Pontos restantes: " + manager.GetRemainingPoints();
+        if (strengthValueText != null)
+            strengthValueText.text = manager.GetAttributeValue(AttributeType.Strength).ToString();
+        else Debug.LogWarning("strengthValueText não atribuído!");
+
+        if (dexterityValueText != null)
+            dexterityValueText.text = manager.GetAttributeValue(AttributeType.Dexterity).ToString();
+        else Debug.LogWarning("dexterityValueText não atribuído!");
+
+        if (intelligenceValueText != null)
+            intelligenceValueText.text = manager.GetAttributeValue(AttributeType.Intelligence).ToString();
+        else Debug.LogWarning("intelligenceValueText não atribuído!");
+
+        if (constitutionValueText != null)
+            constitutionValueText.text = manager.GetAttributeValue(AttributeType.Constitution).ToString();
+        else Debug.LogWarning("constitutionValueText não atribuído!");
+
+        if (wisdomValueText != null)
+            wisdomValueText.text = manager.GetAttributeValue(AttributeType.Wisdom).ToString();
+        else Debug.LogWarning("wisdomValueText não atribuído!");
+
+        if (charismaValueText != null)
+            charismaValueText.text = manager.GetAttributeValue(AttributeType.Charisma).ToString();
+        else Debug.LogWarning("charismaValueText não atribuído!");
+
+        if (remainingPointsText != null)
+            remainingPointsText.text = "Pontos restantes: " + manager.GetRemainingPoints();
+        else Debug.LogWarning("remainingPointsText não atribuído!");
     }
 }
