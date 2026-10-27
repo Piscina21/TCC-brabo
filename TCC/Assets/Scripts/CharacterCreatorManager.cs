@@ -18,6 +18,9 @@ public class CharacterCreatorManager : MonoBehaviour
     public UnityEvent onClassChanged;
     public UnityEvent onAttributesChanged;
     public UnityEvent onAppearanceChanged;
+    [Header("Botões de Navegação")]
+    public UnityEngine.UI.Button nextButton;
+    public UnityEngine.UI.Button previousButton;
 
     // Personagem em construção
     public CharacterBuild currentBuild = new CharacterBuild();
@@ -38,18 +41,31 @@ public class CharacterCreatorManager : MonoBehaviour
     }
 
     // ---------- FLUXO DE ETAPAS ----------
+    private void UpdateNextButtonState()
+    {
+        if (nextButton != null)
+            nextButton.interactable = CanProceed();
+    }
+    private void UpdatePreviousButtonState()
+    {
+        if (previousButton != null)
+            previousButton.interactable = CanGoBack();
+    }
+
     public void GoToNextStep()
     {
-        // Lógica simples: desativar painel atual e ativar o próximo.
-        // (Pode ser uma fila de GameObjects para facilitar)
-        // Exemplo simplificado:
+        if (!CanProceed())
+        {
+            Debug.Log("Não é possível avançar: seleção obrigatória pendente.");
+            return;
+        }
+
         if (raceSelectionPanel.activeSelf)
         {
             ShowPanel(classSelectionPanel);
         }
         else if (classSelectionPanel.activeSelf)
         {
-            // Aplica os bônus raciais + base da classe nos atributos
             ApplyRaceAndClassBonuses();
             remainingPoints = pointsToDistribute;
             onAttributesChanged.Invoke();
@@ -67,31 +83,52 @@ public class CharacterCreatorManager : MonoBehaviour
         {
             ShowPanel(confirmPanel);
         }
-        Debug.Log("Avançando para: " + (classSelectionPanel != null ? classSelectionPanel.name : "null"));
-
     }
-    public void GoToPreviousStep()
+    public bool CanProceed()
     {
-        if (classSelectionPanel.activeSelf) ShowPanel(raceSelectionPanel);
-        else if (attributePanel.activeSelf) ShowPanel(classSelectionPanel);
-        else if (appearancePanel.activeSelf) ShowPanel(attributePanel);
-        else if (namePanel.activeSelf) ShowPanel(appearancePanel);
-        else if (confirmPanel.activeSelf) ShowPanel(namePanel);
+        // Raça
+        if (raceSelectionPanel.activeSelf)
+            return currentBuild.selectedRace != null;
+
+        // Classe
+        if (classSelectionPanel.activeSelf)
+            return currentBuild.selectedClass != null;
+
+        // Atributos: sempre pode avançar (ou exigir que todos os pontos sejam gastos)
+        if (attributePanel.activeSelf)
+            return true; // troque por: return remainingPoints == 0; se quiser exigir gasto total
+
+        // Aparência: sempre pode
+        if (appearancePanel.activeSelf)
+            return true;
+
+        // Nome: exige nome não vazio
+        if (namePanel.activeSelf)
+            return !string.IsNullOrWhiteSpace(currentBuild.characterName);
+
+        // Confirmação: já é a última etapa
+        if (confirmPanel.activeSelf)
+            return true;
+
+        return false;
     }
+  
 
     // ---------- SELEÇÕES ----------
     public void SelectRace(RaceData race)
-{
-    currentBuild.selectedRace = race;
-    onRaceChanged.Invoke(); // ESSENCIAL
-    Debug.Log("Raça selecionada: " + (race != null ? race.raceName : "null")); // Adicione para depurar
-}
+    {
+        currentBuild.selectedRace = race;
+        onRaceChanged.Invoke();
+        UpdateNextButtonState();  // <-- adicionar
+    }
 
     public void SelectClass(ClassData classData)
     {
         currentBuild.selectedClass = classData;
         onClassChanged.Invoke();
+        UpdateNextButtonState();  // <-- adicionar
     }
+
 
     // Aplicar bônus raciais + classe base aos atributos
     private void ApplyRaceAndClassBonuses()
@@ -166,6 +203,7 @@ public class CharacterCreatorManager : MonoBehaviour
     public void SetCharacterName(string name)
     {
         currentBuild.characterName = name;
+        UpdateNextButtonState();  // <-- adicionar
     }
 
     public void FinalizeCharacter()
@@ -188,6 +226,35 @@ public class CharacterCreatorManager : MonoBehaviour
         if (confirmPanel != null) confirmPanel.SetActive(false);
 
         if (panel != null) panel.SetActive(true);
+        UpdateNextButtonState();
+        UpdatePreviousButtonState();
+    }
+
+    // ---------- NAVEGAÇÃO PARA TRÁS ----------
+    public bool CanGoBack()
+    {
+        // Na primeira etapa (raça) não há para onde voltar
+        if (raceSelectionPanel.activeSelf)
+            return false;
+        return true;
+    }
+
+    public void GoToPreviousStep()
+    {
+        Debug.Log("GoToPreviousStep chamado. CanGoBack = " + CanGoBack());
+        if (!CanGoBack()) return;
+
+        if (classSelectionPanel.activeSelf) Debug.Log("Voltando de Classe para Raça");
+        else if (attributePanel.activeSelf) Debug.Log("Voltando de Atributos para Classe");
+        else if (appearancePanel.activeSelf) Debug.Log("Voltando de Aparência para Atributos");
+        else if (namePanel.activeSelf) Debug.Log("Voltando de Nome para Aparência");
+        else if (confirmPanel.activeSelf) Debug.Log("Voltando de Confirmação para Nome");
+
+        if (classSelectionPanel.activeSelf) ShowPanel(raceSelectionPanel);
+        else if (attributePanel.activeSelf) ShowPanel(classSelectionPanel);
+        else if (appearancePanel.activeSelf) ShowPanel(attributePanel);
+        else if (namePanel.activeSelf) ShowPanel(appearancePanel);
+        else if (confirmPanel.activeSelf) ShowPanel(namePanel);
     }
     public RaceData GetSelectedRace()
 {
