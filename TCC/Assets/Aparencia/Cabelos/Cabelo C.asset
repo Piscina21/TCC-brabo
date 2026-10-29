@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: Cabelo C
+  m_EditorClassIdentifier: Assembly-CSharp::HairStyleData
+  optionName: 1
+  previewIcon: {fileID: 0}
+  hairPrefab: {fileID: 3918744958367607363, guid: 7cf18d37212d17f45b39da4703b6543d, type: 3}
