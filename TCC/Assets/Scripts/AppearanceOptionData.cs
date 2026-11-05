@@ -3,28 +3,47 @@ using UnityEngine;
 public abstract class AppearanceOptionData : ScriptableObject
 {
     public string optionName;
-    public Sprite previewIcon; // Ícone para o botão da UI
+    public Sprite previewIcon;
 }
+
 [CreateAssetMenu(fileName = "NewHairStyle", menuName = "RPG/Appearance/Hair Style")]
 public class HairStyleData : AppearanceOptionData
 {
-    public GameObject hairPrefab; // Prefab do cabelo (com SkinnedMeshRenderer)
+    public GameObject hairPrefab;
 }
 
 [CreateAssetMenu(fileName = "NewFace", menuName = "RPG/Appearance/Face")]
 public class FaceData : AppearanceOptionData
 {
-    public GameObject facePrefab; // Prefab do rosto (BlendShapes ou mesh)
+    public GameObject facePrefab;
 }
 
-[CreateAssetMenu(fileName = "NewSkinColor", menuName = "RPG/Appearance/Skin Color")]
-public class SkinColorData : AppearanceOptionData
+[CreateAssetMenu(fileName = "NewEyebrow", menuName = "RPG/Appearance/Eyebrow")]
+public class BrowData : AppearanceOptionData
 {
-    public Material skinMaterial; // Material com a cor da pele
+    public GameObject browPrefab;
 }
 
-[CreateAssetMenu(fileName = "NewGender", menuName = "RPG/Appearance/Gender")]
-public class GenderData : AppearanceOptionData
+[CreateAssetMenu(fileName = "NewNose", menuName = "RPG/Appearance/Nose")]
+public class NoseData : AppearanceOptionData
 {
-    public GameObject bodyPrefab; // Prefab do corpo base
+    public GameObject nosePrefab;
+}
+
+[CreateAssetMenu(fileName = "NewEar", menuName = "RPG/Appearance/Ear")]
+public class EarData : AppearanceOptionData
+{
+    public GameObject earPrefab;
+}
+
+[CreateAssetMenu(fileName = "NewEyes", menuName = "RPG/Appearance/Eyes")]
+public class EyesData : AppearanceOptionData
+{
+    public GameObject eyesPrefab;
+}
+
+[CreateAssetMenu(fileName = "NewBeard", menuName = "RPG/Appearance/Beard")]
+public class BeardData : AppearanceOptionData
+{
+    public GameObject beardPrefab;
 }

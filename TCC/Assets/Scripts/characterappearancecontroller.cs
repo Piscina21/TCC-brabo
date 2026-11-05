@@ -1,70 +1,53 @@
 using UnityEngine;
-using System.Collections.Generic;
 
 public class CharacterAppearanceController : MonoBehaviour
 {
-    [Header("Anchors (Pontos de encaixe no esqueleto)")]
-    public Transform hairAnchor;
-    public Transform faceAnchor;
-
-    [Header("Renderer do Corpo Base")]
+    [Header("Renderer do Corpo Base (para o esqueleto)")]
     public SkinnedMeshRenderer bodyRenderer;
 
-    // Referências às instâncias ativas
+    [Header("Anchors (Pontos de encaixe no modelo)")]
+    public Transform hairAnchor;
+    public Transform faceAnchor;
+    public Transform browAnchor;
+    public Transform noseAnchor;
+    public Transform earAnchor;
+    public Transform eyesAnchor;
+    public Transform beardAnchor;
+
+    // Instâncias ativas
     private GameObject currentHair;
     private GameObject currentFace;
-    private GameObject currentBody;
+    private GameObject currentBrow;
+    private GameObject currentNose;
+    private GameObject currentEar;
+    private GameObject currentEyes;
+    private GameObject currentBeard;
 
-    // --- MÉTODOS PARA APLICAR CADA TIPO DE OPÇÃO ---
+    // --- Métodos públicos chamados pelo painel ---
+    public void ApplyHair(HairStyleData data) { currentHair = Replace(currentHair, data != null ? data.hairPrefab : null, hairAnchor); }
+    public void ApplyFace(FaceData data) { currentFace = Replace(currentFace, data != null ? data.facePrefab : null, faceAnchor); }
+    public void ApplyBrow(BrowData data) { currentBrow = Replace(currentBrow, data != null ? data.browPrefab : null, browAnchor); }
+    public void ApplyNose(NoseData data) { currentNose = Replace(currentNose, data != null ? data.nosePrefab : null, noseAnchor); }
+    public void ApplyEar(EarData data) { currentEar = Replace(currentEar, data != null ? data.earPrefab : null, earAnchor); }
+    public void ApplyEyes(EyesData data) { currentEyes = Replace(currentEyes, data != null ? data.eyesPrefab : null, eyesAnchor); }
+    public void ApplyBeard(BeardData data) { currentBeard = Replace(currentBeard, data != null ? data.beardPrefab : null, beardAnchor); }
 
-    public void ApplyHair(HairStyleData data)
+    // --- Lógica genérica de troca ---
+    private GameObject Replace(GameObject current, GameObject prefab, Transform anchor)
     {
-        if (currentHair != null) Destroy(currentHair);
-        if (data != null && data.hairPrefab != null)
-        {
-            currentHair = Instantiate(data.hairPrefab, hairAnchor);
-            // Garante que o cabelo compartilhe o mesmo esqueleto
-            SetupSkinnedMesh(currentHair);
-        }
-    }
+        if (current != null) Destroy(current);
+        if (prefab == null || anchor == null) return null;
 
-    public void ApplyFace(FaceData data)
-    {
-        if (currentFace != null) Destroy(currentFace);
-        if (data != null && data.facePrefab != null)
-        {
-            currentFace = Instantiate(data.facePrefab, faceAnchor);
-            SetupSkinnedMesh(currentFace);
-        }
-    }
+        GameObject instance = Instantiate(prefab, anchor);
 
-    public void ApplySkinColor(SkinColorData data)
-    {
-        if (bodyRenderer != null && data != null && data.skinMaterial != null)
-        {
-            bodyRenderer.material = data.skinMaterial;
-        }
-    }
-
-    public void ApplyGender(GenderData data)
-    {
-        // Exemplo: trocar o corpo base. Adapte conforme seu asset.
-        if (currentBody != null) Destroy(currentBody);
-        if (data != null && data.bodyPrefab != null)
-        {
-            currentBody = Instantiate(data.bodyPrefab, transform);
-            bodyRenderer = currentBody.GetComponentInChildren<SkinnedMeshRenderer>();
-        }
-    }
-
-    // Configura o SkinnedMeshRenderer para usar o esqueleto do personagem
-    private void SetupSkinnedMesh(GameObject part)
-    {
-        SkinnedMeshRenderer smr = part.GetComponentInChildren<SkinnedMeshRenderer>();
-        if (smr != null)
+        // Se a peça for SkinnedMeshRenderer, herda o esqueleto do corpo
+        SkinnedMeshRenderer smr = instance.GetComponentInChildren<SkinnedMeshRenderer>();
+        if (smr != null && bodyRenderer != null)
         {
             smr.rootBone = bodyRenderer.rootBone;
             smr.bones = bodyRenderer.bones;
         }
+
+        return instance;
     }
 }
