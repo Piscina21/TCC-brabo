@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: SombrancelhaD
+  m_EditorClassIdentifier: Assembly-CSharp::BrowData
+  optionName: SombrancelhaD
+  previewIcon: {fileID: 0}
+  browPrefab: {fileID: 3118377227440921883, guid: 4af97092a6dd9f647aa38950ada2c281, type: 3}
