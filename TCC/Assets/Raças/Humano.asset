@@ -17,7 +17,7 @@ MonoBehaviour:
 
     +2 Intelligence
     +2 Dexterity '
-  icon: {fileID: 21300000, guid: 28d9b1a7479c24545945ed80ce3d7b05, type: 3}
+  icon: {fileID: 0}
   baseBonuses:
   - attribute: 2
     bonusValue: 2

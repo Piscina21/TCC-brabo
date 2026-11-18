@@ -17,7 +17,7 @@ MonoBehaviour:
 
     +2 Wisdom
     +3 Dexterity -2  Charisma'
-  icon: {fileID: 21300000, guid: b40fc24fb074e334d9a023ca1d9a7c0f, type: 3}
+  icon: {fileID: 0}
   baseBonuses:
   - attribute: 4
     bonusValue: 2
