@@ -9,9 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 0881b94e653a36446be6e83d295d5905, type: 3}
   m_Name: OrelhaA
-  m_EditorClassIdentifier: Assembly-CSharp::EarData
-  optionName: OrelhaA
+  m_EditorClassIdentifier: Assembly-CSharp::AppearanceOptionData
+  optionId: 
+  optionName: Orelha 1
+  category: 4
   previewIcon: {fileID: 0}
-  earPrefab: {fileID: 661768909291618851, guid: 839dbd9b540135e4288895107ad43571, type: 3}
+  prefab: {fileID: 661768909291618851, guid: 839dbd9b540135e4288895107ad43571, type: 3}

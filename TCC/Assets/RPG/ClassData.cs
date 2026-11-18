@@ -11,6 +11,15 @@ public class ClassData : ScriptableObject
     public List<AttributeBaseValue> baseAttributes;
     public List<AbilityData> classAbilities;
     public List<RaceData> allowedRaces;
+
+    public bool IsAllowedForRace(RaceData race)
+    {
+        // Se nenhuma raça específica foi definida na lista, libera para todas
+        if (race == null || allowedRaces == null || allowedRaces.Count == 0)
+            return true;
+
+        return allowedRaces.Contains(race);
+    }
 }
 
 [System.Serializable]

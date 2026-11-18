@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: Guerreiro
   m_EditorClassIdentifier: 
   className: Guerreiro
-  description: "\xC9 um guerreiro"
+  description: "Ganha a habilidade \"Investida\" \n+4 Strength +3 Dexterity +3 Constitution\nApenas
+    Humanos e Goblins podem ser Guerreiros"
   icon: {fileID: 0}
   baseAttributes:
   - attribute: 0

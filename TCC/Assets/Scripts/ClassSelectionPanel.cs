@@ -10,12 +10,17 @@ public class ClassSelectionPanel : MonoBehaviour
     public Text classDescriptionText;
 
     [Header("Dados")]
-    public ClassData[] availableClasses;   // preencher no Inspector com seus assets de classe
+    public ClassData[] availableClasses;
+
+    [Header("Comportamento de Restrição")]
+    [Tooltip("Se marcado, esconde classes proibidas. Se desmarcado, mantém o botão visível mas desativado.")]
+    public bool hideRestrictedClasses = false;
 
     private void OnEnable()
     {
         PopulateClassButtons();
         manager.onClassChanged.AddListener(UpdateDescription);
+        UpdateDescription();
     }
 
     private void OnDisable()
@@ -23,29 +28,48 @@ public class ClassSelectionPanel : MonoBehaviour
         manager.onClassChanged.RemoveListener(UpdateDescription);
     }
 
-    void PopulateClassButtons()
+    private void PopulateClassButtons()
     {
-        // Limpa botões antigos
         foreach (Transform child in classButtonContainer)
             Destroy(child.gameObject);
 
-        // Cria um botão para cada classe
+        RaceData currentRace = manager != null ? manager.GetSelectedRace() : null;
+
         foreach (ClassData classData in availableClasses)
         {
+            if (classData == null) continue;
+
+            bool isAllowed = classData.IsAllowedForRace(currentRace);
+
+            if (!isAllowed && hideRestrictedClasses)
+                continue;
+
             GameObject btnObj = Instantiate(classButtonPrefab, classButtonContainer);
             Button btn = btnObj.GetComponent<Button>();
             Text btnText = btnObj.GetComponentInChildren<Text>();
 
             if (btnText != null)
-                btnText.text = classData.className;
+            {
+                btnText.text = isAllowed
+                    ? classData.className
+                    : $"{classData.className} (Indisponível)";
+            }
 
-            btn.onClick.AddListener(() => manager.SelectClass(classData));
+            if (btn != null)
+            {
+                btn.interactable = isAllowed;
+                if (isAllowed)
+                {
+                    ClassData capturedClass = classData;
+                    btn.onClick.AddListener(() => manager.SelectClass(capturedClass));
+                }
+            }
         }
     }
 
-    void UpdateDescription()
+    private void UpdateDescription()
     {
-        ClassData selected = manager.GetSelectedClass(); // precisaremos criar esse getter
+        ClassData selected = manager.GetSelectedClass();
         if (selected != null)
             classDescriptionText.text = selected.description;
         else

@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: Inventor
   m_EditorClassIdentifier: 
   className: Inventor
-  description: "\xC9 um inventor"
+  description: "Ganha a habilidade \"Arapuca\" \n+4 Intelligence +2 Dexterity +4
+    Wisdom\nApenas Humanos e Goblins podem ser Inventores"
   icon: {fileID: 0}
   baseAttributes:
   - attribute: 0
@@ -32,4 +33,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a84b891a705c5034a81b0a5722087b15, type: 2}
   allowedRaces:
   - {fileID: 11400000, guid: 2e65761228a4f544e8c3e7daf8f88d96, type: 2}
-  - {fileID: 0}
+  - {fileID: 11400000, guid: a44f860ed1c6d6442a6a3c9257222474, type: 2}

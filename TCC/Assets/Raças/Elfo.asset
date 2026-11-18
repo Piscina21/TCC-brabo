@@ -13,14 +13,17 @@ MonoBehaviour:
   m_Name: Elfo
   m_EditorClassIdentifier: 
   raceName: Elfo
-  description: "\xC9 um elfo"
+  description: 'Possui a Habilidade "Arco Mistico" como Poder Inato
+
+    +2 Wisdom
+    +4 Dexterity -2 Strength '
   icon: {fileID: 0}
   baseBonuses:
-  - attribute: 1
-    bonusValue: 0
+  - attribute: 0
+    bonusValue: -2
   - attribute: 4
-    bonusValue: 0
+    bonusValue: 2
   - attribute: 5
-    bonusValue: 0
+    bonusValue: 4
   racialAbilities:
   - {fileID: 11400000, guid: fe6490e0524fbf944a42cdef4cdc2337, type: 2}

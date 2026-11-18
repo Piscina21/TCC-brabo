@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0881b94e653a36446be6e83d295d5905, type: 3}
+  m_Name: Olhos 2
+  m_EditorClassIdentifier: Assembly-CSharp::AppearanceOptionData
+  optionId: 
+  optionName: Olhos 2
+  category: 5
+  previewIcon: {fileID: 0}
+  prefab: {fileID: 909437656785346306, guid: 09d1dfbb00e21194791307612eaa1da5, type: 3}

@@ -13,9 +13,18 @@ MonoBehaviour:
   m_Name: Arqueiro
   m_EditorClassIdentifier: 
   className: Arqueiro
-  description: "\xC9 um arqueiro"
+  description: "Ganha a habilidade \"Preciso\" \n+1 Intelligence +4 Dexterity +2
+    Wisdom\nApenas Humanos e Elfos podem ser Arqueiros"
   icon: {fileID: 0}
-  baseAttributes: []
-  classAbilities: []
+  baseAttributes:
+  - attribute: 1
+    baseValue: 4
+  - attribute: 4
+    baseValue: 2
+  - attribute: 2
+    baseValue: 1
+  classAbilities:
+  - {fileID: 11400000, guid: 787acecebdc14754593c4a1d1eb427b5, type: 2}
   allowedRaces:
   - {fileID: 11400000, guid: b412f83a9ef4d034b907803a32338149, type: 2}
+  - {fileID: 11400000, guid: 2e65761228a4f544e8c3e7daf8f88d96, type: 2}

@@ -1,65 +1,94 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections.Generic;
 
 public class AppearancePanel : MonoBehaviour
 {
+    [Serializable]
+    public struct CategoryContainer
+    {
+        public AppearanceCategory category;
+        public Transform container;
+    }
+
+    [Serializable]
+    public struct ColorPaletteConfig
+    {
+        public ColorCategory category;
+        public Transform container;
+        public List<Color> availableColors;
+    }
+
     [Header("Referências")]
     public CharacterCreatorManager manager;
-    public CharacterAppearanceController appearanceController;
-    public GameObject optionButtonPrefab;
+    public GameObject optionButtonPrefab; // Seu Prefab de botão com Text padrão
+    public GameObject colorSwatchPrefab;  // Um Prefab simples de Button com Image branca
 
-    [Header("Categorias (preencher no Inspector)")]
-    public List<HairStyleData> availableHairStyles;
-    public List<FaceData> availableFaces;
-    public List<BrowData> availableBrows;
-    public List<NoseData> availableNoses;
-    public List<EarData> availableEars;
-    public List<EyesData> availableEyes;
-    public List<BeardData> availableBeards;
+    [Header("Peças de Aparência")]
+    public List<AppearanceOptionData> allAppearanceOptions = new List<AppearanceOptionData>();
+    public List<CategoryContainer> categoryContainers = new List<CategoryContainer>();
 
-    [Header("Contêineres de Botões")]
-    public Transform hairButtonContainer;
-    public Transform faceButtonContainer;
-    public Transform browButtonContainer;
-    public Transform noseButtonContainer;
-    public Transform earButtonContainer;
-    public Transform eyesButtonContainer;
-    public Transform beardButtonContainer;
+    [Header("Paletas de Cores")]
+    public List<ColorPaletteConfig> colorPalettes = new List<ColorPaletteConfig>();
 
     private void OnEnable()
     {
-        Populate(hairButtonContainer, availableHairStyles, d => appearanceController.ApplyHair(d));
-        Populate(faceButtonContainer, availableFaces, d => appearanceController.ApplyFace(d));
-        Populate(browButtonContainer, availableBrows, d => appearanceController.ApplyBrow(d));
-        Populate(noseButtonContainer, availableNoses, d => appearanceController.ApplyNose(d));
-        Populate(earButtonContainer, availableEars, d => appearanceController.ApplyEar(d));
-        Populate(eyesButtonContainer, availableEyes, d => appearanceController.ApplyEyes(d));
-        Populate(beardButtonContainer, availableBeards, d => appearanceController.ApplyBeard(d));
+        PopulateParts();
+        PopulateColors();
     }
 
-    private void Populate<T>(Transform container, List<T> options, System.Action<T> onSelected) where T : AppearanceOptionData
+    private void PopulateParts()
     {
-        if (container == null || options == null) return;
-
-        foreach (Transform child in container) Destroy(child.gameObject);
-
-        foreach (T option in options)
+        foreach (var catConfig in categoryContainers)
         {
-            GameObject btnObj = Instantiate(optionButtonPrefab, container);
-            Button btn = btnObj.GetComponent<Button>();
-            Text btnText = btnObj.GetComponentInChildren<Text>();
-            if (btnText != null) btnText.text = option.optionName;
+            if (catConfig.container == null) continue;
 
-            Image icon = btnObj.transform.Find("Icon")?.GetComponent<Image>();
-            if (icon != null && option.previewIcon != null)
+            foreach (Transform child in catConfig.container)
+                Destroy(child.gameObject);
+
+            var options = allAppearanceOptions.Where(o => o != null && o.category == catConfig.category);
+
+            foreach (var option in options)
             {
-                icon.sprite = option.previewIcon;
-                icon.enabled = true;
-            }
+                GameObject btnObj = Instantiate(optionButtonPrefab, catConfig.container);
+                Button btn = btnObj.GetComponent<Button>();
+                Text btnText = btnObj.GetComponentInChildren<Text>();
 
-            T captured = option; // evita bug de closure
-            btn.onClick.AddListener(() => onSelected(captured));
+                if (btnText != null)
+                    btnText.text = option.optionName;
+
+                AppearanceOptionData captured = option;
+                btn.onClick.AddListener(() => manager.SelectAppearance(captured));
+            }
+        }
+    }
+
+    private void PopulateColors()
+    {
+        if (colorSwatchPrefab == null) return;
+
+        foreach (var palette in colorPalettes)
+        {
+            if (palette.container == null) continue;
+
+            foreach (Transform child in palette.container)
+                Destroy(child.gameObject);
+
+            foreach (Color col in palette.availableColors)
+            {
+                GameObject swatchObj = Instantiate(colorSwatchPrefab, palette.container);
+                Button btn = swatchObj.GetComponent<Button>();
+                Image img = swatchObj.GetComponent<Image>();
+
+                if (img != null)
+                    img.color = col;
+
+                Color capturedColor = col;
+                ColorCategory capturedCategory = palette.category;
+                btn.onClick.AddListener(() => manager.SelectColor(capturedCategory, capturedColor));
+            }
         }
     }
 }

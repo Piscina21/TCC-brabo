@@ -1,290 +1,377 @@
-// CharacterCreatorManager.cs
+using System;
+using System.Collections.Generic;
+using System.IO;
+using Unity.AI.Navigation.LowLevel;
 using UnityEngine;
 using UnityEngine.Events;
-using System.Collections.Generic;
+using UnityEngine.UI;
 
+public enum SaveLocation
+{
+    PersistentDataPath, // Pasta padrão segura da Unity (AppData/LocalLow)
+    ProjectAssets,      // Cria uma pasta "Saves" dentro de Assets (aparece na Unity)
+    Desktop,            // Salva direto na Área de Trabalho
+    CustomPath          // Caminho personalizado digitado no Inspector
+}
 public class CharacterCreatorManager : MonoBehaviour
 {
-    [Header("Steps Panels")]
-    public GameObject raceSelectionPanel;
-    public GameObject classSelectionPanel;
-    public GameObject attributePanel;
-    public GameObject appearancePanel;
-    public GameObject namePanel;
-    public GameObject confirmPanel;
+    [Header("Fluxo de Painéis (Arraste na ordem desejada)")]
+    public List<GameObject> stepPanels = new List<GameObject>();
+    private int currentStepIndex = 0;
+
+    [Header("Botões de Navegação")]
+    public Button nextButton;
+    public Button previousButton;
+
+    [Header("Regras para Avançar")]
+    [Tooltip("Se marcado, o jogador precisa gastar todos os pontos antes de avançar dos atributos.")]
+    public bool requireAllAttributePoints = true;
+    [Tooltip("Se marcado, o jogador precisa escolher ao menos uma peça ou cor na aparência.")]
+    public bool requireAppearanceSelection = false;
 
     [Header("Events")]
     public UnityEvent onRaceChanged;
     public UnityEvent onClassChanged;
     public UnityEvent onAttributesChanged;
     public UnityEvent onAppearanceChanged;
-    [Header("Botões de Navegação")]
-    public UnityEngine.UI.Button nextButton;
-    public UnityEngine.UI.Button previousButton;
 
-    // Personagem em construção
-    public CharacterBuild currentBuild = new CharacterBuild();
-
-    // Pontos extras para distribuir (ex: 10 pontos)
+    [Header("Configuração de Atributos")]
     public int pointsToDistribute = 10;
     private int remainingPoints;
 
+    // Estado em tempo de execução (Runtime)
+    private RaceData selectedRace;
+    private ClassData selectedClass;
+    private Dictionary<AttributeType, int> baseAttributes = new Dictionary<AttributeType, int>();
+    private Dictionary<AttributeType, int> allocatedAttributes = new Dictionary<AttributeType, int>();
+    private Dictionary<AppearanceCategory, AppearanceOptionData> selectedAppearance = new Dictionary<AppearanceCategory, AppearanceOptionData>();
+    private Dictionary<ColorCategory, Color> selectedColors = new Dictionary<ColorCategory, Color>();
+
+    // Objeto limpo pronto para JSON
+    public CharacterBuild currentBuild = new CharacterBuild();
+
+    private void Awake()
+    {
+        InitializeDictionaries();
+    }
+
     private void Start()
     {
-        ShowPanel(raceSelectionPanel);
         remainingPoints = pointsToDistribute;
+        SyncBuildData();
+        ShowStep(0);
+    }
 
-        foreach (AttributeType attr in System.Enum.GetValues(typeof(AttributeType)))
+    private void InitializeDictionaries()
+    {
+        baseAttributes.Clear();
+        allocatedAttributes.Clear();
+
+        foreach (AttributeType attr in Enum.GetValues(typeof(AttributeType)))
         {
-            currentBuild.attributes[attr] = 0;
+            baseAttributes[attr] = 0;
+            allocatedAttributes[attr] = 0;
         }
     }
 
-    // ---------- FLUXO DE ETAPAS ----------
-    private void UpdateNextButtonState()
+    // ---------- VALIDAÇÃO E NAVEGAÇÃO MODULAR ----------
+    public bool CanAdvanceFromCurrentStep()
+    {
+        if (currentStepIndex < 0 || currentStepIndex >= stepPanels.Count) return false;
+
+        GameObject currentPanel = stepPanels[currentStepIndex];
+        if (currentPanel == null) return false;
+
+        if (currentPanel.GetComponent("RaceSelectionPanel") != null)
+            return selectedRace != null;
+
+        if (currentPanel.GetComponent("ClassSelectionPanel") != null)
+            return selectedClass != null;
+
+        if (currentPanel.GetComponent("AttributePanel") != null)
+            return !requireAllAttributePoints || remainingPoints == 0;
+
+        if (currentPanel.GetComponent("AppearancePanel") != null || currentPanel.GetComponent("Appearancepanel") != null)
+            return !requireAppearanceSelection || (selectedAppearance.Count > 0 || selectedColors.Count > 0);
+
+        if (currentPanel.GetComponent("NamePanel") != null)
+            return !string.IsNullOrWhiteSpace(currentBuild.characterName);
+
+        return true;
+    }
+
+    public void UpdateNavigationButtons()
     {
         if (nextButton != null)
-            nextButton.interactable = CanProceed();
-    }
-    private void UpdatePreviousButtonState()
-    {
+            nextButton.interactable = CanAdvanceFromCurrentStep();
+
         if (previousButton != null)
-            previousButton.interactable = CanGoBack();
+            previousButton.interactable = currentStepIndex > 0;
     }
 
     public void GoToNextStep()
     {
-        if (!CanProceed())
+        if (!CanAdvanceFromCurrentStep()) return;
+
+        if (currentStepIndex + 1 < stepPanels.Count)
         {
-            Debug.Log("Não é possível avançar: seleção obrigatória pendente.");
-            return;
+            ShowStep(currentStepIndex + 1);
         }
-
-        if (raceSelectionPanel.activeSelf)
-        {
-            ShowPanel(classSelectionPanel);
-        }
-        else if (classSelectionPanel.activeSelf)
-        {
-            ApplyRaceAndClassBonuses();
-            remainingPoints = pointsToDistribute;
-            onAttributesChanged.Invoke();
-            ShowPanel(attributePanel);
-        }
-        else if (attributePanel.activeSelf)
-        {
-            ShowPanel(appearancePanel);
-        }
-        else if (appearancePanel.activeSelf)
-        {
-            ShowPanel(namePanel);
-        }
-        else if (namePanel.activeSelf)
-        {
-            ShowPanel(confirmPanel);
-        }
-    }
-    public bool CanProceed()
-    {
-        // Raça
-        if (raceSelectionPanel.activeSelf)
-            return currentBuild.selectedRace != null;
-
-        // Classe
-        if (classSelectionPanel.activeSelf)
-            return currentBuild.selectedClass != null;
-
-        // Atributos: sempre pode avançar (ou exigir que todos os pontos sejam gastos)
-        if (attributePanel.activeSelf)
-            return true; // troque por: return remainingPoints == 0; se quiser exigir gasto total
-
-        // Aparência: sempre pode
-        if (appearancePanel.activeSelf)
-            return true;
-
-        // Nome: exige nome não vazio
-        if (namePanel.activeSelf)
-            return !string.IsNullOrWhiteSpace(currentBuild.characterName);
-
-        // Confirmação: já é a última etapa
-        if (confirmPanel.activeSelf)
-            return true;
-
-        return false;
-    }
-  
-
-    // ---------- SELEÇÕES ----------
-    public void SelectRace(RaceData race)
-    {
-        currentBuild.selectedRace = race;
-        onRaceChanged.Invoke();
-        UpdateNextButtonState();  // <-- adicionar
-    }
-
-    public void SelectClass(ClassData classData)
-    {
-        currentBuild.selectedClass = classData;
-        onClassChanged.Invoke();
-        UpdateNextButtonState();  // <-- adicionar
-    }
-
-
-    // Aplicar bônus raciais + classe base aos atributos
-    private void ApplyRaceAndClassBonuses()
-    {
-        // Limpa atributos — iterando sobre o enum, não sobre o Dictionary
-        foreach (AttributeType attr in System.Enum.GetValues(typeof(AttributeType)))
-        {
-            currentBuild.attributes[attr] = 0;
-        }
-
-        // Aplica base da classe
-        if (currentBuild.selectedClass != null)
-        {
-            foreach (var baseAttr in currentBuild.selectedClass.baseAttributes)
-            {
-                currentBuild.attributes[baseAttr.attribute] += baseAttr.baseValue;
-            }
-        }
-
-        // Aplica bônus raciais
-        if (currentBuild.selectedRace != null)
-        {
-            foreach (var bonus in currentBuild.selectedRace.baseBonuses)
-            {
-                currentBuild.attributes[bonus.attribute] += bonus.bonusValue;
-            }
-        }
-
-        // Combina habilidades
-        currentBuild.abilities.Clear();
-        if (currentBuild.selectedRace != null)
-            currentBuild.abilities.AddRange(currentBuild.selectedRace.racialAbilities);
-        if (currentBuild.selectedClass != null)
-            currentBuild.abilities.AddRange(currentBuild.selectedClass.classAbilities);
-    }
-
-    // Distribuir pontos durante a etapa de atributos
-    public int maxAttributeValue = 20;
-
-    public void IncreaseAttribute(AttributeType attr)
-    {
-        if (remainingPoints > 0 && currentBuild.attributes[attr] < maxAttributeValue)
-        {
-            currentBuild.attributes[attr]++;
-            remainingPoints--;
-            onAttributesChanged.Invoke();
-        }
-    }
-
-    [Header("Limites de Atributo")]
-    public int minAttributeValue = -5;  // valor mínimo que o jogador pode atingir
-
-    public void DecreaseAttribute(AttributeType attr)
-    {
-        // Só impede de ir abaixo do mínimo configurado
-        if (currentBuild.attributes[attr] > minAttributeValue)
-        {
-            currentBuild.attributes[attr]--;
-            remainingPoints++;
-            onAttributesChanged.Invoke();
-        }
-    }
-
-    public int GetAttributeValue(AttributeType attr)
-    {
-        return currentBuild.attributes.ContainsKey(attr) ? currentBuild.attributes[attr] : 0;
-    }
-
-    public int GetRemainingPoints() => remainingPoints;
-
-    // ---------- NOME E FINALIZAÇÃO ----------
-    public void SetCharacterName(string name)
-    {
-        currentBuild.characterName = name;
-        UpdateNextButtonState();  // <-- adicionar
-    }
-
-    public void FinalizeCharacter()
-    {
-        // Salva o personagem (exemplo com JSON)
-        string json = JsonUtility.ToJson(currentBuild);
-        PlayerPrefs.SetString("LastCharacter", json);
-        PlayerPrefs.Save();
-        Debug.Log("Personagem salvo:\n" + json);
-        // Aqui você pode carregar a cena do jogo ou um resumo.
-    }
-
-    private void ShowPanel(GameObject panel)
-    {
-        if (raceSelectionPanel != null) raceSelectionPanel.SetActive(false);
-        if (classSelectionPanel != null) classSelectionPanel.SetActive(false);
-        if (attributePanel != null) attributePanel.SetActive(false);
-        if (appearancePanel != null) appearancePanel.SetActive(false);
-        if (namePanel != null) namePanel.SetActive(false);
-        if (confirmPanel != null) confirmPanel.SetActive(false);
-
-        if (panel != null) panel.SetActive(true);
-        UpdateNextButtonState();
-        UpdatePreviousButtonState();
-    }
-
-    // ---------- NAVEGAÇÃO PARA TRÁS ----------
-    public bool CanGoBack()
-    {
-        // Na primeira etapa (raça) não há para onde voltar
-        if (raceSelectionPanel.activeSelf)
-            return false;
-        return true;
     }
 
     public void GoToPreviousStep()
     {
-        Debug.Log("GoToPreviousStep chamado. CanGoBack = " + CanGoBack());
-        if (!CanGoBack()) return;
-
-        if (classSelectionPanel.activeSelf) Debug.Log("Voltando de Classe para Raça");
-        else if (attributePanel.activeSelf) Debug.Log("Voltando de Atributos para Classe");
-        else if (appearancePanel.activeSelf) Debug.Log("Voltando de Aparência para Atributos");
-        else if (namePanel.activeSelf) Debug.Log("Voltando de Nome para Aparência");
-        else if (confirmPanel.activeSelf) Debug.Log("Voltando de Confirmação para Nome");
-
-        if (classSelectionPanel.activeSelf) ShowPanel(raceSelectionPanel);
-        else if (attributePanel.activeSelf) ShowPanel(classSelectionPanel);
-        else if (appearancePanel.activeSelf) ShowPanel(attributePanel);
-        else if (namePanel.activeSelf) ShowPanel(appearancePanel);
-        else if (confirmPanel.activeSelf) ShowPanel(namePanel);
+        if (currentStepIndex - 1 >= 0)
+        {
+            ShowStep(currentStepIndex - 1);
+        }
     }
-    public RaceData GetSelectedRace()
-{
-    // Se você armazena a referência direta no CharacterBuild:
-    return currentBuild.selectedRace;
-    
-    // Se você armazena só o nome (string), precisaria buscar na lista de raças.
-    // Mas por enquanto, use referência direta.
 
-}
-public ClassData GetSelectedClass()
-{
-    return currentBuild.selectedClass;   // exige que currentBuild tenha o campo ClassData
-}
-    // ---------- APARÊNCIA ----------
-    public int GetHairStyleIndex() => currentBuild.hairStyleIndex;
-    public void SetHairStyleIndex(int index)
+    public void ShowStep(int index)
     {
-        currentBuild.hairStyleIndex = index;
-        onAppearanceChanged.Invoke();
+        if (index < 0 || index >= stepPanels.Count) return;
+
+        currentStepIndex = index;
+        for (int i = 0; i < stepPanels.Count; i++)
+        {
+            if (stepPanels[i] != null)
+                stepPanels[i].SetActive(i == currentStepIndex);
+        }
+
+        UpdateNavigationButtons();
     }
 
-    public int GetSkinColorIndex() => currentBuild.skinColorIndex;
-    public void SetSkinColorIndex(int index)
+    // ---------- RAÇA E CLASSE ----------
+    public void SelectRace(RaceData race)
     {
-        currentBuild.skinColorIndex = index;
-        onAppearanceChanged.Invoke();
+        selectedRace = race;
+
+        // Se a classe já selecionada for proibida para a nova raça, limpa a seleção
+        if (selectedClass != null && !selectedClass.IsAllowedForRace(selectedRace))
+        {
+            selectedClass = null;
+            onClassChanged?.Invoke();
+        }
+
+        RecalculateBaseStats();
+        onRaceChanged?.Invoke();
+        UpdateNavigationButtons();
     }
 
-    // ---------- NOME ----------
-    public string GetCharacterName() => currentBuild.characterName;
+    public void SelectClass(ClassData classData)
+    {
+        if (classData != null && !classData.IsAllowedForRace(selectedRace))
+            return;
 
+        selectedClass = classData;
+        RecalculateBaseStats();
+        onClassChanged?.Invoke();
+        UpdateNavigationButtons();
+    }
+
+    public RaceData GetSelectedRace() => selectedRace;
+    public ClassData GetSelectedClass() => selectedClass;
+
+    private void RecalculateBaseStats()
+    {
+        foreach (AttributeType attr in Enum.GetValues(typeof(AttributeType)))
+        {
+            baseAttributes[attr] = 0;
+        }
+
+        if (selectedClass != null)
+        {
+            foreach (var baseAttr in selectedClass.baseAttributes)
+                baseAttributes[baseAttr.attribute] += baseAttr.baseValue;
+        }
+
+        if (selectedRace != null)
+        {
+            foreach (var bonus in selectedRace.baseBonuses)
+                baseAttributes[bonus.attribute] += bonus.bonusValue;
+        }
+
+        SyncBuildData();
+        onAttributesChanged?.Invoke();
+    }
+
+    // ---------- ATRIBUTOS (COM TRAVA DE VALOR BASE) ----------
+    public void IncreaseAttribute(AttributeType attr)
+    {
+        if (remainingPoints <= 0) return;
+
+        allocatedAttributes[attr]++;
+        remainingPoints--;
+
+        SyncBuildData();
+        onAttributesChanged?.Invoke();
+        UpdateNavigationButtons();
+    }
+
+    public void DecreaseAttribute(AttributeType attr)
+    {
+        if (allocatedAttributes[attr] <= 0) return;
+
+        allocatedAttributes[attr]--;
+        remainingPoints++;
+
+        SyncBuildData();
+        onAttributesChanged?.Invoke();
+        UpdateNavigationButtons();
+    }
+
+    public int GetBaseAttributeValue(AttributeType attr) => baseAttributes.TryGetValue(attr, out int val) ? val : 0;
+    public int GetAllocatedAttributeValue(AttributeType attr) => allocatedAttributes.TryGetValue(attr, out int val) ? val : 0;
+    public int GetTotalAttributeValue(AttributeType attr) => GetBaseAttributeValue(attr) + GetAllocatedAttributeValue(attr);
+    public int GetRemainingPoints() => remainingPoints;
+
+    // ---------- APARÊNCIA E CORES ----------
+    public void SelectAppearance(AppearanceOptionData option)
+    {
+        if (option == null) return;
+
+        selectedAppearance[option.category] = option;
+        SyncBuildData();
+        onAppearanceChanged?.Invoke();
+        UpdateNavigationButtons();
+    }
+
+    public AppearanceOptionData GetSelectedAppearance(AppearanceCategory category)
+    {
+        return selectedAppearance.TryGetValue(category, out var option) ? option : null;
+    }
+
+    public Dictionary<AppearanceCategory, AppearanceOptionData> GetAllSelectedAppearance() => selectedAppearance;
+
+    public void SelectColor(ColorCategory category, Color color)
+    {
+        selectedColors[category] = color;
+        SyncBuildData();
+        onAppearanceChanged?.Invoke();
+        UpdateNavigationButtons();
+    }
+
+    public Dictionary<ColorCategory, Color> GetAllSelectedColors() => selectedColors;
+
+    // ---------- NOME, PRONOME E JSON ----------
+    public void SetCharacterIdentity(string characterName, string pronoun)
+    {
+        currentBuild.characterName = characterName;
+        currentBuild.pronoun = pronoun;
+        UpdateNavigationButtons();
+    }
+
+    public void SyncBuildData()
+    {
+        currentBuild.raceName = selectedRace != null ? selectedRace.raceName : string.Empty;
+        currentBuild.className = selectedClass != null ? selectedClass.className : string.Empty;
+
+        currentBuild.attributes.Clear();
+        foreach (AttributeType attr in Enum.GetValues(typeof(AttributeType)))
+        {
+            int baseVal = GetBaseAttributeValue(attr);
+            int allocVal = GetAllocatedAttributeValue(attr);
+            currentBuild.attributes.Add(new AttributeSaveData
+            {
+                type = attr,
+                baseValue = baseVal,
+                allocatedValue = allocVal,
+                totalValue = baseVal + allocVal
+            });
+        }
+
+        currentBuild.abilities.Clear();
+        if (selectedRace != null && selectedRace.racialAbilities != null)
+        {
+            foreach (var ab in selectedRace.racialAbilities)
+                if (ab != null) currentBuild.abilities.Add(ab.name);
+        }
+        if (selectedClass != null && selectedClass.classAbilities != null)
+        {
+            foreach (var ab in selectedClass.classAbilities)
+                if (ab != null) currentBuild.abilities.Add(ab.name);
+        }
+
+        currentBuild.appearance.Clear();
+        foreach (var pair in selectedAppearance)
+        {
+            currentBuild.appearance.Add(new SerializableAppearance
+            {
+                category = pair.Key,
+                selectedOptionId = string.IsNullOrEmpty(pair.Value.optionId) ? pair.Value.name : pair.Value.optionId,
+                selectedOptionName = pair.Value.optionName
+            });
+        }
+
+        currentBuild.colors.Clear();
+        foreach (var pair in selectedColors)
+        {
+            currentBuild.colors.Add(new SerializableColor
+            {
+                category = pair.Key,
+                colorHex = "#" + ColorUtility.ToHtmlStringRGB(pair.Value)
+            });
+        }
+    }
+
+    public void FinalizeCharacter()
+    {
+        SyncBuildData();
+        string json = JsonUtility.ToJson(currentBuild, true);
+
+        // Mantém salvo no PlayerPrefs para fácil leitura entre cenas
+        PlayerPrefs.SetString("LastCharacter", json);
+        PlayerPrefs.Save();
+
+        // Garante que a pasta de destino exista
+        string folder = GetSaveFolderPath();
+        if (!Directory.Exists(folder))
+            Directory.CreateDirectory(folder);
+
+        // Define o nome do arquivo (limpando caracteres inválidos como / \ : * ?)
+        string fileName = (useCharacterNameAsFileName && !string.IsNullOrWhiteSpace(currentBuild.characterName))
+            ? SanitizeFileName(currentBuild.characterName)
+            : "personagem";
+
+        string filePath = Path.Combine(folder, fileName + ".json");
+        File.WriteAllText(filePath, json);
+
+#if UNITY_EDITOR
+        UnityEditor.AssetDatabase.Refresh();
+#endif
+
+        Debug.Log("Arquivo JSON salvo em: " + filePath + "\n" + json);
+    }
+    [Header("Configuração de Salvamento")]
+    public SaveLocation saveLocation = SaveLocation.ProjectAssets;
+    [Tooltip("Preencha apenas se escolher CustomPath (Ex: C:/TCC/Personagens)")]
+    public string customFolderPath = "";
+    [Tooltip("Se marcado, usa o nome do personagem no arquivo (Ex: Arannis.json)")]
+    public bool useCharacterNameAsFileName = true;
+    private string GetSaveFolderPath()
+    {
+        switch (saveLocation)
+        {
+            case SaveLocation.ProjectAssets:
+                return Path.Combine(Application.dataPath, "Saves");
+
+            case SaveLocation.Desktop:
+                return Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+
+            case SaveLocation.CustomPath:
+                return !string.IsNullOrWhiteSpace(customFolderPath)
+                    ? customFolderPath
+                    : Application.persistentDataPath;
+
+            default:
+                return Application.persistentDataPath;
+        }
+    }
+
+    private string SanitizeFileName(string rawName)
+    {
+        foreach (char c in Path.GetInvalidFileNameChars())
+            rawName = rawName.Replace(c, '_');
+        return rawName.Trim();
+    }
 }
